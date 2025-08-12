@@ -32,6 +32,15 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 import uvicorn
 
+# ===== ADD THIS FOR WEBHOOK =====
+from Webhook_Telegram import app as webhook_app
+
+# ===== MAIN APP CREATION =====
+app = FastAPI()
+
+# Mount the webhook so /webhook routes to Webhook_Telegram.py
+app.mount("/webhook", webhook_app)
+
 # ===== DIVINE CONFIGURATION =====
 class DivineConfig:
     # SACRED AUTHENTICATION
