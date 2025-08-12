@@ -17,13 +17,28 @@ app = FastAPI()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
+@app.get("/")
+async def webhook_alive():
+    return {"status": "webhook-alive", "time": f"{datetime.utcnow()} UTC"}
+
+@app.get("/test")
+async def webhook_test():
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return {"status": "error", "message": "Telegram env vars not set"}
+    msg = f"✅ Webhook test ping @ {datetime.utcnow()} UTC"
+    async with httpx.AsyncClient(timeout=15) as client:
+        r = await client.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            json={"chat_id": TELEGRAM_CHAT_ID, "text": msg},
+        )
+    return {"status": "ok", "telegram_status": r.status_code}
+
 @app.post("/")
 async def receive_webhook(request: Request):
     try:
         payload = await request.json()
     except Exception:
         payload = {"raw": (await request.body()).decode("utf-8", errors="ignore")}
-
     logger.info(f"[WEBHOOK RECEIVED] {payload}")
 
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
@@ -36,11 +51,10 @@ async def receive_webhook(request: Request):
         f"<b>Payload:</b> {payload}"
     )
 
-    telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             r = await client.post(
-                telegram_url,
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
                 json={"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"},
             )
         logger.info(f"Telegram send status: {r.status_code} {r.text[:200]}")
