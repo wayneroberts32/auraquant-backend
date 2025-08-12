@@ -1,22 +1,32 @@
 # Webhook_Telegram.py
 # AuraQuant Rich_Bot Telegram Webhook (standalone)
-# Uses env vars TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID
+# Sends incoming webhook payloads to a Telegram chat
 
 from fastapi import FastAPI, Request
 import httpx
-import os
 import logging
 from datetime import datetime
+
+# ==============================
+# 🔹 HARDCODED TELEGRAM SETTINGS
+# ==============================
+# Replace with your bot's API token and chat ID for testing
+TELEGRAM_BOT_TOKEN = 8194171444:AAEqUFMLyhlIIQLHSyf1y-9og8YsRQubfiY
+TELEGRAM_CHAT_ID = 6995384125
+# ==============================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Webhook_Telegram")
 
 app = FastAPI()
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+@app.get("/health")
+async def health():
+    return {"status": "webhook-alive"}
 
-@app.post("/")
+# Handle both `/webhook` and `/webhook/`
+@app.post("/webhook")
+@app.post("/webhook/")
 async def receive_webhook(request: Request):
     try:
         payload = await request.json()
@@ -26,8 +36,8 @@ async def receive_webhook(request: Request):
     logger.info(f"[WEBHOOK RECEIVED] {payload}")
 
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        logger.error("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID env vars")
-        return {"status": "error", "message": "Telegram env vars not set"}
+        logger.error("Missing Telegram bot token or chat ID")
+        return {"status": "error", "message": "Telegram credentials not set"}
 
     message = (
         f"📡 <b>Rich_Bot Webhook Triggered</b>\n"
