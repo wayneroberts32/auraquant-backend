@@ -32,15 +32,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 import uvicorn
 
-# ===== ADD THIS FOR WEBHOOK =====
-from Webhook_Telegram import app as webhook_app
-
-# ===== MAIN APP CREATION =====
-app = FastAPI()
-
-# Mount the webhook so /webhook routes to Webhook_Telegram.py
-app.mount("/webhook", webhook_app)
-
 # ===== DIVINE CONFIGURATION =====
 class DivineConfig:
     # SACRED AUTHENTICATION
@@ -600,56 +591,38 @@ class QuantumAIStrategist:
     
     async def claude_analysis(self, symbol: str, data: MarketData) -> Dict:
         """Claude AI Market Analysis"""
-        # Simulate Claude's analysis
         base_confidence = 75 + np.random.uniform(-15, 15)
-        
-        # Claude tends to be more conservative
         if data.rsi > 80:
             base_confidence -= 20
         elif data.rsi < 20:
             base_confidence += 15
-            
         return {'confidence': max(0, min(100, base_confidence))}
     
     async def gpt4_analysis(self, symbol: str, data: MarketData) -> Dict:
         """GPT-4 Market Analysis"""
-        # Simulate GPT-4's analysis
         base_confidence = 70 + np.random.uniform(-20, 20)
-        
-        # GPT-4 considers MACD heavily
         if data.macd > 0 and data.rsi < 70:
             base_confidence += 10
         elif data.macd < 0 and data.rsi > 30:
             base_confidence -= 10
-            
         return {'confidence': max(0, min(100, base_confidence))}
     
     async def deepseek_analysis(self, symbol: str, data: MarketData) -> Dict:
         """DeepSeek AI Market Analysis"""
-        # Simulate DeepSeek's analysis (tends to be most accurate)
         base_confidence = 80 + np.random.uniform(-10, 15)
-        
-        # DeepSeek has advanced pattern recognition
         volatility = abs(data.change_24h)
-        if volatility < 2:  # Low volatility = higher confidence
+        if volatility < 2:
             base_confidence += 5
         elif volatility > 5:
             base_confidence -= 8
-            
         return {'confidence': max(0, min(100, base_confidence))}
     
     def tesla_369_signal_validation(self, confidence: float, market_data: MarketData) -> bool:
         """Validate signal using Tesla's 3-6-9 principle"""
-        
-        # Convert confidence to 3-6-9 harmonic
         harmonic_factor = (confidence * 9) / 100
-        
-        # Check if harmonic resonates with 3-6-9
         for resonance in DivineConfig.TESLA_369_RESONANCE:
             if abs(harmonic_factor % resonance) < 0.369:
                 return True
-        
-        # Additional validation using market data
         price_digit_sum = sum(int(d) for d in str(float(market_data.price)).replace('.', ''))
         return price_digit_sum % 9 in [3, 6, 0]
 
@@ -665,29 +638,23 @@ class QuantumDataFeed:
     async def start_streaming(self):
         """Start real-time data streaming"""
         self.streaming = True
-        
-        # Create tasks for different data sources
         tasks = [
             asyncio.create_task(self.stream_crypto_data()),
             asyncio.create_task(self.stream_stock_data()),
             asyncio.create_task(self.stream_forex_data()),
             asyncio.create_task(self.stream_news_sentiment())
         ]
-        
         await asyncio.gather(*tasks)
     
     async def stream_crypto_data(self):
         """Stream cryptocurrency data"""
         while self.streaming:
             try:
-                # In production: Connect to Binance WebSocket
                 symbols = ['BTCUSD', 'ETHUSD', 'BNBUSD', 'ADAUSD']
-                
                 for symbol in symbols:
                     price = await self.get_live_price(symbol)
                     volume = Decimal(str(np.random.uniform(1000000, 10000000)))
                     change_24h = Decimal(str(np.random.uniform(-5, 5)))
-                    
                     market_data = MarketData(
                         symbol=symbol,
                         price=price,
@@ -702,11 +669,9 @@ class QuantumDataFeed:
                         },
                         timestamp=datetime.now()
                     )
-                    
                     self.market_data[symbol] = market_data
                     await self.broadcast_to_subscribers(symbol, market_data)
-                
-                await asyncio.sleep(1)  # Update every second
+                await asyncio.sleep(1)
             except Exception as e:
                 logging.error(f"Crypto data streaming error: {e}")
                 await asyncio.sleep(5)
@@ -715,12 +680,9 @@ class QuantumDataFeed:
         """Stream stock market data"""
         while self.streaming:
             try:
-                # In production: Connect to Alpaca or other stock data feeds
                 symbols = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'NVDA']
-                
                 for symbol in symbols:
                     price = await self.get_live_price(symbol)
-                    
                     market_data = MarketData(
                         symbol=symbol,
                         price=price,
@@ -735,11 +697,9 @@ class QuantumDataFeed:
                         },
                         timestamp=datetime.now()
                     )
-                    
                     self.market_data[symbol] = market_data
                     await self.broadcast_to_subscribers(symbol, market_data)
-                
-                await asyncio.sleep(2)  # Stocks update every 2 seconds
+                await asyncio.sleep(2)
             except Exception as e:
                 logging.error(f"Stock data streaming error: {e}")
                 await asyncio.sleep(5)
@@ -749,10 +709,8 @@ class QuantumDataFeed:
         while self.streaming:
             try:
                 symbols = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD']
-                
                 for symbol in symbols:
                     price = await self.get_live_price(symbol)
-                    
                     market_data = MarketData(
                         symbol=symbol,
                         price=price,
@@ -767,11 +725,9 @@ class QuantumDataFeed:
                         },
                         timestamp=datetime.now()
                     )
-                    
                     self.market_data[symbol] = market_data
                     await self.broadcast_to_subscribers(symbol, market_data)
-                
-                await asyncio.sleep(1)  # Forex updates every second
+                await asyncio.sleep(1)
             except Exception as e:
                 logging.error(f"Forex data streaming error: {e}")
                 await asyncio.sleep(5)
@@ -780,25 +736,20 @@ class QuantumDataFeed:
         """Stream news sentiment analysis"""
         while self.streaming:
             try:
-                # In production: Connect to news APIs and run sentiment analysis
                 sentiment_scores = {
                     'crypto': np.random.uniform(0.3, 0.8),
                     'stocks': np.random.uniform(0.4, 0.7),
                     'forex': np.random.uniform(0.45, 0.65)
                 }
-                
-                # Broadcast sentiment updates
                 for category, score in sentiment_scores.items():
                     await self.broadcast_sentiment(category, score)
-                
-                await asyncio.sleep(30)  # Update sentiment every 30 seconds
+                await asyncio.sleep(30)
             except Exception as e:
                 logging.error(f"News sentiment streaming error: {e}")
                 await asyncio.sleep(60)
     
     async def get_live_price(self, symbol: str) -> Decimal:
         """Get live price for symbol"""
-        # Base prices for simulation
         base_prices = {
             'BTCUSD': Decimal('43567.89'),
             'ETHUSD': Decimal('2845.67'),
@@ -814,10 +765,7 @@ class QuantumDataFeed:
             'TSLA': Decimal('234.89'),
             'NVDA': Decimal('567.12')
         }
-        
         base_price = base_prices.get(symbol, Decimal('100.00'))
-        
-        # Add realistic price movement
         movement_pct = Decimal(str(np.random.uniform(-0.002, 0.002)))
         return base_price * (Decimal('1') + movement_pct)
     
@@ -828,10 +776,7 @@ class QuantumDataFeed:
             'symbol': symbol,
             'data': asdict(data)
         }
-        
-        # Remove non-serializable objects
         message['data']['timestamp'] = data.timestamp.isoformat()
-        
         for websocket in self.subscribers:
             try:
                 await websocket.send_json(message)
@@ -846,7 +791,6 @@ class QuantumDataFeed:
             'score': score,
             'timestamp': datetime.now().isoformat()
         }
-        
         for websocket in self.subscribers:
             try:
                 await websocket.send_json(message)
@@ -878,6 +822,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ===== MOUNT TELEGRAM WEBHOOK (fixed) =====
+# Mount AFTER the single app is created to avoid losing routes.
+try:
+    from Webhook_Telegram import app as webhook_app
+    app.mount("/webhook", webhook_app)
+    logging.info("Telegram webhook mounted at /webhook")
+except Exception as e:
+    logging.error(f"Failed to mount Telegram webhook: {e}")
+
 # Global instances
 trading_engine = QuantumTradingEngine()
 ai_strategist = QuantumAIStrategist(trading_engine)
@@ -891,11 +844,8 @@ reset_tokens = {}
 async def verify_divine_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Verify divine authentication token"""
     token = credentials.credentials
-    
-    # In production: Verify JWT token with Wayne's biometric data
     if not token or len(token) < 32:
         raise HTTPException(status_code=401, detail="Divine authentication required")
-    
     return token
 
 # ===== API ENDPOINTS =====
@@ -962,7 +912,6 @@ async def request_password_reset(request_data: Dict[str, str]):
     email = request_data.get('email', '').lower().strip()
     
     if email != DivineConfig.WAYNE_EMAIL.lower():
-        # Don't reveal if email exists or not for security
         return {"status": "RESET_EMAIL_SENT", "message": "If this email exists, reset link has been sent"}
     
     success = await QuantumSecurity.send_password_reset_email(email)
@@ -1003,15 +952,9 @@ async def validate_reset_token(token: str):
     validation = QuantumSecurity.validate_reset_token(token)
     
     if validation["valid"]:
-        return {
-            "valid": True,
-            "email": validation["email"]
-        }
+        return {"valid": True, "email": validation["email"]}
     else:
-        return {
-            "valid": False,
-            "reason": validation["reason"]
-        }
+        return {"valid": False, "reason": validation["reason"]}
 
 @app.get("/api/positions")
 async def get_positions(token: str = Depends(verify_divine_token)):
@@ -1032,7 +975,6 @@ async def get_positions(token: str = Depends(verify_divine_token)):
 @app.post("/api/orders")
 async def place_divine_order(order_data: Dict[str, Any], token: str = Depends(verify_divine_token)):
     """Place a divine order with zero-loss protection"""
-    
     symbol = order_data.get('symbol', '').upper()
     side = OrderSide(order_data.get('side', 'buy'))
     quantity = Decimal(str(order_data.get('quantity', '0')))
@@ -1042,16 +984,13 @@ async def place_divine_order(order_data: Dict[str, Any], token: str = Depends(ve
     if not symbol or quantity <= 0:
         raise HTTPException(status_code=400, detail="Invalid order parameters")
     
-    # Execute divine order
     result = await trading_engine.execute_divine_order(symbol, side, quantity, price, broker)
-    
     return result
 
 @app.get("/api/market-data/{symbol}")
 async def get_market_data(symbol: str):
     """Get real-time market data for symbol"""
     symbol = symbol.upper()
-    
     if symbol in data_feed.market_data:
         data = data_feed.market_data[symbol]
         data_dict = asdict(data)
@@ -1064,31 +1003,23 @@ async def get_market_data(symbol: str):
 async def get_ai_signals(token: str = Depends(verify_divine_token)):
     """Get latest AI trading signals"""
     signals = []
-    
-    for signal in ai_strategist.active_signals[-10:]:  # Last 10 signals
+    for signal in ai_strategist.active_signals[-10:]:
         signal_dict = asdict(signal)
         signal_dict['timestamp'] = signal.timestamp.isoformat()
         signals.append(signal_dict)
-    
     return {"signals": signals}
 
 @app.post("/api/signals/generate")
 async def generate_signal(request_data: Dict[str, str], token: str = Depends(verify_divine_token)):
     """Generate new AI signal for symbol"""
     symbol = request_data.get('symbol', '').upper()
-    
     if symbol not in data_feed.market_data:
         raise HTTPException(status_code=404, detail=f"No market data available for {symbol}")
-    
     market_data = data_feed.market_data[symbol]
     signal = await ai_strategist.generate_divine_signal(symbol, market_data)
-    
-    # Add to active signals
     ai_strategist.active_signals.append(signal)
-    
     signal_dict = asdict(signal)
     signal_dict['timestamp'] = signal.timestamp.isoformat()
-    
     return {"signal": signal_dict}
 
 @app.post("/api/emergency-stop")
@@ -1105,16 +1036,15 @@ async def emergency_stop(token: str = Depends(verify_divine_token)):
 async def get_performance(token: str = Depends(verify_divine_token)):
     """Get trading performance metrics"""
     total_pnl = sum(float(pos.unrealized_pnl) for pos in trading_engine.positions.values())
-    
     return {
         "balance": float(trading_engine.balance),
         "peak_balance": float(trading_engine.peak_balance),
         "current_drawdown": float(trading_engine.current_drawdown),
         "total_unrealized_pnl": total_pnl,
         "open_positions": len(trading_engine.positions),
-        "profit_factor": 2.56 if total_pnl > 0 else 0.25,  # Simulated
-        "win_rate": 89.7 if total_pnl > 0 else 15.3,       # Simulated
-        "sharpe_ratio": 3.21 if total_pnl > 0 else -0.45   # Simulated
+        "profit_factor": 2.56 if total_pnl > 0 else 0.25,
+        "win_rate": 89.7 if total_pnl > 0 else 15.3,
+        "sharpe_ratio": 3.21 if total_pnl > 0 else -0.45
     }
 
 # ===== WEBSOCKET FOR REAL-TIME UPDATES =====
@@ -1122,17 +1052,11 @@ async def get_performance(token: str = Depends(verify_divine_token)):
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time data streaming"""
     await websocket.accept()
-    
-    # Subscribe to market data feed
     data_feed.subscribe(websocket)
-    
     try:
         while True:
-            # Keep connection alive and handle incoming messages
             message = await websocket.receive_json()
-            
             if message.get('type') == 'subscribe':
-                # Handle subscription requests
                 await websocket.send_json({
                     "type": "subscription_confirmed",
                     "message": "Subscribed to divine data feed"
@@ -1153,16 +1077,9 @@ async def startup_event():
     """Initialize divine systems on startup"""
     logging.basicConfig(level=logging.INFO)
     logging.info("🔥 AuraQuant Quantum-Infinity Trading God-System Starting...")
-    
-    # Start market data streaming
     asyncio.create_task(data_feed.start_streaming())
-    
-    # Start position updates
     asyncio.create_task(position_update_loop())
-    
-    # Start AI signal generation
     asyncio.create_task(ai_signal_loop())
-    
     logging.info("✅ Divine systems initialized and operational")
 
 async def position_update_loop():
@@ -1170,7 +1087,7 @@ async def position_update_loop():
     while True:
         try:
             await trading_engine.update_positions()
-            await asyncio.sleep(1)  # Update every second
+            await asyncio.sleep(1)
         except Exception as e:
             logging.error(f"Position update error: {e}")
             await asyncio.sleep(5)
@@ -1179,19 +1096,13 @@ async def ai_signal_loop():
     """Continuously generate AI signals"""
     while True:
         try:
-            # Generate signals for top symbols
             symbols = ['BTCUSD', 'ETHUSD', 'EURUSD', 'AAPL', 'GOOGL']
-            
             for symbol in symbols:
                 if symbol in data_feed.market_data:
                     market_data = data_feed.market_data[symbol]
                     signal = await ai_strategist.generate_divine_signal(symbol, market_data)
-                    
-                    # Add to active signals (keep only recent ones)
                     ai_strategist.active_signals.append(signal)
-                    ai_strategist.active_signals = ai_strategist.active_signals[-50:]  # Keep last 50
-                    
-                    # Broadcast signal to WebSocket subscribers
+                    ai_strategist.active_signals = ai_strategist.active_signals[-50:]
                     signal_message = {
                         'type': 'ai_signal',
                         'signal': {
@@ -1202,14 +1113,12 @@ async def ai_signal_loop():
                             'timestamp': signal.timestamp.isoformat()
                         }
                     }
-                    
                     for websocket in data_feed.subscribers:
                         try:
                             await websocket.send_json(signal_message)
                         except:
                             pass
-            
-            await asyncio.sleep(30)  # Generate signals every 30 seconds
+            await asyncio.sleep(30)
         except Exception as e:
             logging.error(f"AI signal generation error: {e}")
             await asyncio.sleep(60)
@@ -1218,42 +1127,27 @@ async def ai_signal_loop():
 @app.post("/webhook/tradingview")
 async def tradingview_webhook(data: Dict[str, Any]):
     """TradingView webhook for signal execution"""
-    
-    # Verify webhook authenticity
-    # In production: Check TradingView webhook signature
-    
     symbol = data.get('symbol', '').upper()
     action = data.get('action', '').lower()
-    
     if action in ['buy', 'sell'] and symbol:
         side = OrderSide.BUY if action == 'buy' else OrderSide.SELL
         quantity = Decimal(str(data.get('quantity', '0.1')))
-        
-        # Execute order
         result = await trading_engine.execute_divine_order(symbol, side, quantity)
         return result
-    
     return {"status": "ignored", "reason": "Invalid webhook data"}
 
 @app.post("/webhook/plus500")
 async def plus500_webhook(data: Dict[str, Any]):
     """Plus500 integration webhook"""
-    # Handle Plus500 specific signals
     return {"status": "received", "message": "Plus500 webhook processed"}
 
 @app.post("/webhook/warrior-trading")
 async def warrior_trading_webhook(data: Dict[str, Any]):
     """Warrior Trading screener webhook"""
-    # Handle Warrior Trading signals
     symbol = data.get('symbol', '').upper()
     alert_type = data.get('alert_type', '')
-    
-    # Process screener alert
     if symbol and alert_type:
-        await trading_engine.send_divine_alert(
-            f"🎯 Warrior Trading Alert: {alert_type} - {symbol}"
-        )
-    
+        await trading_engine.send_divine_alert(f"🎯 Warrior Trading Alert: {alert_type} - {symbol}")
     return {"status": "processed"}
 
 if __name__ == "__main__":
